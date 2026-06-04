@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Shirt,
@@ -11,7 +11,9 @@ import {
   Mail,
   Users,
   Settings,
+  LogOut,
 } from "lucide-react";
+import { useAuthStore } from "@/store/auth";
 
 const navSections = [
   {
@@ -46,6 +48,13 @@ const navSections = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/admin/login");
+  };
 
   return (
     <aside className="w-[220px] bg-noir-black flex flex-col shrink-0 border-r border-white/5">
@@ -105,14 +114,22 @@ export default function AdminSidebar() {
       <div className="px-5 py-4 border-t border-white/[0.06]">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-full bg-noir-red flex items-center justify-center text-[10px] text-white font-medium">
-            RA
+            {user?.initials || "?"}
           </div>
-          <div>
-            <span className="block text-[11px] text-white/60">Rizky Admin</span>
+          <div className="flex-1 min-w-0">
+            <span className="block text-[11px] text-white/60 truncate">{user?.name || "Guest"}</span>
             <span className="block text-[9px] tracking-[1px] text-white/25 uppercase">
-              Super Admin
+              {user?.role || "—"}
             </span>
           </div>
+          <button
+            onClick={handleLogout}
+            className="p-1.5 text-white/30 hover:text-noir-red transition-colors cursor-pointer"
+            aria-label="Logout"
+            title="Logout"
+          >
+            <LogOut size={14} />
+          </button>
         </div>
       </div>
     </aside>
