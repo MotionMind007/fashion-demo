@@ -6,10 +6,13 @@ import FeaturedProduct from "@/components/FeaturedProduct";
 import Manifesto from "@/components/Manifesto";
 import ServicesTeaser from "@/components/ServicesTeaser";
 import Footer from "@/components/Footer";
+import { OrganizationSchema, LocalBusinessSchema } from "@/components/StructuredData";
 
 export default function HomePage() {
   return (
     <>
+      <OrganizationSchema />
+      <LocalBusinessSchema />
       <Navbar />
       <main>
         <HeroSection />
