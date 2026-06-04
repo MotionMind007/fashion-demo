@@ -475,22 +475,24 @@ export default function DesignPage() {
                   style={{ width: "100%", maxWidth: 480, aspectRatio: "1/1" }}
                   onClick={() => setSelectedDesign(null)}
                 >
-                  {/* Mockup Image */}
-                  <img
-                    src={currentGarment.mockup[side]}
-                    alt={`${currentGarment.label} mockup — ${side}`}
-                    className="absolute inset-0 w-full h-full object-contain"
-                    draggable={false}
-                    style={{ zIndex: 1 }}
-                  />
-
-                  {/* Color tint overlay (multiply blend) */}
-                  {color !== "none" && (
-                    <div
-                      className="absolute inset-0 mix-blend-multiply"
-                      style={{ backgroundColor: color, zIndex: 2 }}
+                  {/* Mockup container — isolates blend mode from white bg */}
+                  <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 1, isolation: "isolate" }}>
+                    {/* Mockup Image */}
+                    <img
+                      src={currentGarment.mockup[side]}
+                      alt={`${currentGarment.label} mockup — ${side}`}
+                      className="absolute inset-0 w-full h-full object-contain"
+                      draggable={false}
                     />
-                  )}
+
+                    {/* Color tint — only blends with the mockup image, not the bg */}
+                    {color !== "none" && (
+                      <div
+                        className="absolute inset-0 mix-blend-multiply pointer-events-none"
+                        style={{ backgroundColor: color }}
+                      />
+                    )}
+                  </div>
 
                   {/* Printable area indicator (dashed border) */}
                   <div
