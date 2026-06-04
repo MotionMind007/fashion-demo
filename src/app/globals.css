@@ -1,26 +1,119 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ═══════════════════════════════════════════════════
+   NOIR Design System — Tailwind v4 Theme
+   ═══════════════════════════════════════════════════ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Colors */
+  --color-noir-black: #0A0A0A;
+  --color-noir-white: #F5F3EF;
+  --color-noir-red: #C8001A;
+  --color-noir-red-dark: #A00015;
+  --color-noir-gray: #8A8680;
+  --color-noir-cream: #EAE7E1;
+  --color-noir-bg: #F0EDE7;
+  --color-noir-border: #E2DFD9;
+  --color-noir-surface: #FAF8F5;
+
+  /* Fonts */
+  --font-serif: var(--font-playfair);
+  --font-accent: var(--font-cormorant);
+  --font-sans: var(--font-dm-sans);
+
+  /* Animations */
+  --animate-fade-up: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-fade-in: fade-in 0.6s ease forwards;
+  --animate-slide-right: slide-right 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-marquee: marquee 25s linear infinite;
+  --animate-pulse-slow: pulse-slow 4s ease-in-out infinite;
+  --animate-text-reveal: text-reveal 1s cubic-bezier(0.77, 0, 0.175, 1) forwards;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-right {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes text-reveal {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0% 0 0); }
+}
+
+/* ═══════════════════════════════════════════════════
+   Base Styles
+   ═══════════════════════════════════════════════════ */
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-noir-white);
+  color: var(--color-noir-black);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Selection */
+::selection {
+  background: var(--color-noir-red);
+  color: var(--color-noir-white);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   Custom Utilities
+   ═══════════════════════════════════════════════════ */
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, #0A0A0A 0%, #1a1a1a 40%, #0A0A0A 100%);
+}
+
+.red-accent-line {
+  position: relative;
+}
+
+.red-accent-line::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--color-noir-red);
+  opacity: 0.4;
 }
