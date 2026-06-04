@@ -14,7 +14,7 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -24,16 +24,13 @@ export default function AdminLogin() {
     }
 
     setLoading(true);
-    // Simulate network delay
-    setTimeout(() => {
-      const success = login(email, password);
-      if (success) {
-        router.push("/admin");
-      } else {
-        setError("Email atau password salah.");
-      }
-      setLoading(false);
-    }, 600);
+    const result = await login(email, password);
+    if (result.success) {
+      router.push("/admin");
+    } else {
+      setError(result.error || "Email atau password salah.");
+    }
+    setLoading(false);
   };
 
   return (

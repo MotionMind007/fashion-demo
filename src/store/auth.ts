@@ -1,35 +1,76 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  initials: string;
+}
 
 interface AuthStore {
   isAuthenticated: boolean;
-  user: { name: string; email: string; role: string; initials: string } | null;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
+  user: User | null;
+  token: string | null;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  checkAuth: () => void;
 }
 
-// Demo credentials
-const DEMO_ACCOUNTS = [
-  { email: "rizky@noir-studio.id", password: "admin123", name: "Rizky Admin", role: "Super Admin", initials: "RA" },
-  { email: "anya@noir-studio.id", password: "editor123", name: "Anya Editor", role: "Editor", initials: "AE" },
-  { email: "budi@noir-studio.id", password: "viewer123", name: "Budi Viewer", role: "Viewer", initials: "BV" },
-];
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set) => ({
+      isAuthenticated: false,
+      user: null,
+      token: null,
 
-export const useAuthStore = create<AuthStore>((set) => ({
-  isAuthenticated: false,
-  user: null,
+      login: async (email, password) => {
+        try {
+          const res = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
 
-  login: (email, password) => {
-    const account = DEMO_ACCOUNTS.find(
-      (a) => a.email === email && a.password === password
-    );
-    if (account) {
-      set({ isAuthenticated: true, user: { name: account.name, email: account.email, role: account.role, initials: account.initials } });
-      return true;
+          const data = await res.json();
+
+          if (res.ok && data.success) {
+            set({
+              isAuthenticated: true,
+              user: data.user,
+              token: data.token,
+            });
+            return { success: true };
+          }
+
+          return { success: false, error: data.error || "Login gagal." };
+        } catch {
+          return { success: false, error: "Koneksi gagal. Coba lagi." };
+        }
+      },
+
+      logout: async () => {
+        try {
+          await fetch("/api/auth/logout", { method: "POST" });
+        } catch {
+          // Ignore network errors on logout
+        }
+        set({ isAuthenticated: false, user: null, token: null });
+      },
+
+      checkAuth: () => {
+        // Token expiry check could be added here
+        // For now, persist middleware handles rehydration
+      },
+    }),
+    {
+      name: "noir-auth",
+      partialize: (state) => ({
+        isAuthenticated: state.isAuthenticated,
+        user: state.user,
+        token: state.token,
+      }),
     }
-    return false;
-  },
-
-  logout: () => {
-    set({ isAuthenticated: false, user: null });
-  },
-}));
+  )
+);
