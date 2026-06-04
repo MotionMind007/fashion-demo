@@ -1,188 +1,143 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, MailOpen, Trash2, Reply } from "lucide-react";
-
-interface Message {
-  id: string;
-  name: string;
-  email: string;
-  initials: string;
-  message: string;
-  time: string;
-  status: "unread" | "read" | "replied";
-}
-
-const initialMessages: Message[] = [
-  {
-    id: "1",
-    name: "Andika Kusuma",
-    email: "andika@gmail.com",
-    initials: "AK",
-    message: "Halo, saya tertarik dengan layanan Bespoke Tailoring untuk suit pernikahan saya bulan depan. Apakah masih menerima order?",
-    time: "2 jam lalu",
-    status: "unread",
-  },
-  {
-    id: "2",
-    name: "Sari Rahayu",
-    email: "sari.r@outlook.com",
-    initials: "SR",
-    message: "Apakah tersedia untuk editorial shoot bulan depan? Kami membutuhkan styling untuk 4 orang model untuk campaign brand kami.",
-    time: "5 jam lalu",
-    status: "unread",
-  },
-  {
-    id: "3",
-    name: "Kevin Lim",
-    email: "kevin.lim@company.co",
-    initials: "KL",
-    message: "Apa bisa konsultasi dulu sebelum buat janji styling session? Saya mau tanya soal dress code buat event formal.",
-    time: "1 hari lalu",
-    status: "unread",
-  },
-  {
-    id: "4",
-    name: "Diana Putri",
-    email: "diana.p@email.id",
-    initials: "DP",
-    message: "Terima kasih atas response-nya. Saya akan datang hari Sabtu sesuai appointment yang sudah dibuat.",
-    time: "3 hari lalu",
-    status: "replied",
-  },
-  {
-    id: "5",
-    name: "Reza Pratama",
-    email: "reza.p@mail.com",
-    initials: "RP",
-    message: "Mau tanya apakah The Onyx Coat available dalam ukuran L? Kalau bisa custom, berapa lama proses pembuatannya?",
-    time: "5 hari lalu",
-    status: "read",
-  },
-];
+import { Mail, Trash2, Reply, Check, CheckCheck } from "lucide-react";
+import { useAdminStore, ContactMessage } from "@/store/admin";
 
 export default function AdminMessages() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [selectedMsg, setSelectedMsg] = useState<Message | null>(null);
+  const { messages, updateMessageStatus, deleteMessage } = useAdminStore();
+  const [selectedMsg, setSelectedMsg] = useState<ContactMessage | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ContactMessage | null>(null);
+  const [toast, setToast] = useState("");
 
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
   const unreadCount = messages.filter((m) => m.status === "unread").length;
 
-  const markAsRead = (id: string) => {
-    setMessages((prev) =>
-      prev.map((m) => (m.id === id && m.status === "unread" ? { ...m, status: "read" as const } : m))
-    );
+  const markAllRead = () => {
+    messages.filter((m) => m.status === "unread").forEach((m) => updateMessageStatus(m.id, "read"));
+    showToast("Semua pesan ditandai sudah dibaca.");
+  };
+
+  const selectMessage = (msg: ContactMessage) => {
+    setSelectedMsg(msg);
+    if (msg.status === "unread") updateMessageStatus(msg.id, "read");
+  };
+
+  const handleDelete = () => {
+    if (!deleteTarget) return;
+    deleteMessage(deleteTarget.id);
+    if (selectedMsg?.id === deleteTarget.id) setSelectedMsg(null);
+    showToast("Pesan berhasil dihapus.");
+    setDeleteTarget(null);
+  };
+
+  const markReplied = (id: string) => {
+    updateMessageStatus(id, "replied");
+    showToast("Ditandai sebagai sudah dibalas.");
+  };
+
+  const formatTime = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const hours = Math.floor(diff / 3600000);
+    if (hours < 1) return "Baru saja";
+    if (hours < 24) return `${hours} jam lalu`;
+    const days = Math.floor(hours / 24);
+    return `${days} hari lalu`;
   };
 
   return (
     <div className="space-y-5">
-      {/* Header Actions */}
+      {toast && (
+        <div className="bg-noir-black text-noir-white px-4 py-2.5 rounded-md text-[12px] flex items-center gap-2 border-l-3 border-l-noir-red">
+          <span className="text-noir-red">✓</span> {toast}
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
-        <p className="text-[11px] text-noir-gray">
-          {unreadCount} pesan belum dibaca
-        </p>
-        <button
-          onClick={() => setMessages((prev) => prev.map((m) => ({ ...m, status: m.status === "unread" ? "read" as const : m.status })))}
-          className="text-[10px] uppercase tracking-[1px] text-noir-gray hover:text-noir-black transition-colors cursor-pointer"
-        >
-          Tandai Semua Dibaca
-        </button>
+        <p className="text-[11px] text-noir-gray">{unreadCount} pesan belum dibaca</p>
+        <button onClick={markAllRead} className="text-[10px] uppercase tracking-[1px] text-noir-gray hover:text-noir-black transition-colors cursor-pointer">Tandai Semua Dibaca</button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Message List */}
+        {/* List */}
         <div className="lg:col-span-5 bg-white rounded-lg border border-noir-border overflow-hidden">
           <div className="px-4 py-3 border-b border-noir-border">
-            <span className="text-[12px] font-medium text-noir-black">Inbox</span>
+            <span className="text-[12px] font-medium text-noir-black">Inbox ({messages.length})</span>
           </div>
           <div className="max-h-[500px] overflow-y-auto">
             {messages.map((msg) => (
               <button
                 key={msg.id}
-                onClick={() => { setSelectedMsg(msg); markAsRead(msg.id); }}
+                onClick={() => selectMessage(msg)}
                 className={`w-full text-left flex items-start gap-3 px-4 py-3.5 border-b border-noir-border/40 last:border-b-0 transition-colors cursor-pointer ${
-                  selectedMsg?.id === msg.id
-                    ? "bg-noir-surface"
-                    : msg.status === "unread"
-                    ? "bg-noir-surface/50 hover:bg-noir-surface"
-                    : "hover:bg-noir-surface/30"
+                  selectedMsg?.id === msg.id ? "bg-noir-surface" : msg.status === "unread" ? "bg-noir-surface/50 hover:bg-noir-surface" : "hover:bg-noir-surface/30"
                 }`}
               >
-                {msg.status === "unread" && (
-                  <div className="w-1.5 h-1.5 bg-noir-red rounded-full shrink-0 mt-2" />
-                )}
-                <div className="w-8 h-8 rounded-full bg-noir-cream flex items-center justify-center text-[10px] font-medium text-noir-black shrink-0">
-                  {msg.initials}
-                </div>
+                {msg.status === "unread" && <div className="w-1.5 h-1.5 bg-noir-red rounded-full shrink-0 mt-2" />}
+                {msg.status === "read" && <Check size={12} className="text-noir-gray shrink-0 mt-1.5" />}
+                {msg.status === "replied" && <CheckCheck size={12} className="text-green-600 shrink-0 mt-1.5" />}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`text-[12px] ${msg.status === "unread" ? "font-bold text-noir-black" : "font-medium text-noir-black"}`}>
-                      {msg.name}
-                    </span>
-                    <span className="text-[9px] text-noir-gray/60 shrink-0">{msg.time}</span>
+                    <span className={`text-[12px] ${msg.status === "unread" ? "font-bold text-noir-black" : "font-medium text-noir-black"}`}>{msg.name}</span>
+                    <span className="text-[9px] text-noir-gray/60 shrink-0">{formatTime(msg.receivedAt)}</span>
                   </div>
                   <p className="text-[11px] text-noir-gray truncate mt-0.5">{msg.message}</p>
                 </div>
               </button>
             ))}
+            {messages.length === 0 && (
+              <div className="px-4 py-8 text-center text-[12px] text-noir-gray">Tidak ada pesan.</div>
+            )}
           </div>
         </div>
 
-        {/* Message Detail */}
+        {/* Detail */}
         <div className="lg:col-span-7 bg-white rounded-lg border border-noir-border overflow-hidden">
           {selectedMsg ? (
             <>
               <div className="px-5 py-4 border-b border-noir-border">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-[14px] font-medium text-noir-black">
-                      {selectedMsg.name}
-                    </h3>
-                    <p className="text-[11px] text-noir-gray mt-0.5">
-                      {selectedMsg.email} · {selectedMsg.time}
-                    </p>
+                    <h3 className="text-[14px] font-medium text-noir-black">{selectedMsg.name}</h3>
+                    <p className="text-[11px] text-noir-gray mt-0.5">{selectedMsg.email} · {formatTime(selectedMsg.receivedAt)}</p>
                   </div>
                   <div className="flex gap-1.5">
-                    <button
-                      className="w-7 h-7 rounded border border-noir-border flex items-center justify-center text-noir-gray hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-colors cursor-pointer"
-                      aria-label="Reply"
-                    >
-                      <Reply size={13} />
-                    </button>
-                    <button
-                      className="w-7 h-7 rounded border border-noir-border flex items-center justify-center text-noir-gray hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-colors cursor-pointer"
-                      aria-label="Delete"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                    <button onClick={() => markReplied(selectedMsg.id)} className="w-7 h-7 rounded border border-noir-border flex items-center justify-center text-noir-gray hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-colors cursor-pointer" aria-label="Mark replied"><Reply size={13} /></button>
+                    <button onClick={() => setDeleteTarget(selectedMsg)} className="w-7 h-7 rounded border border-noir-border flex items-center justify-center text-noir-gray hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-colors cursor-pointer" aria-label="Delete"><Trash2 size={13} /></button>
                   </div>
                 </div>
               </div>
               <div className="p-5">
-                <p className="text-[13px] text-noir-black leading-relaxed">
-                  {selectedMsg.message}
-                </p>
-              </div>
-              <div className="px-5 py-4 border-t border-noir-border">
-                <textarea
-                  placeholder="Tulis balasan..."
-                  rows={3}
-                  className="w-full px-3 py-2.5 text-[12px] bg-noir-surface border border-noir-border rounded-md outline-none resize-y focus:border-noir-black/30 transition-colors mb-3"
-                />
-                <button className="px-4 py-2 text-[10px] uppercase tracking-[1px] font-medium bg-noir-black text-noir-white rounded hover:bg-noir-black/90 transition-colors cursor-pointer">
-                  Kirim Balasan
-                </button>
+                <p className="text-[13px] text-noir-black leading-relaxed">{selectedMsg.message}</p>
+                <div className="mt-3">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-[9px] uppercase tracking-[1.5px] font-medium ${
+                    selectedMsg.status === "unread" ? "bg-noir-red/10 text-noir-red" : selectedMsg.status === "replied" ? "bg-green-50 text-green-800" : "bg-noir-surface text-noir-gray"
+                  }`}>{selectedMsg.status}</span>
+                </div>
               </div>
             </>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <Mail size={32} className="text-noir-gray/30 mb-3" />
-              <p className="text-[12px] text-noir-gray">
-                Pilih pesan untuk membaca isi lengkapnya
-              </p>
+              <p className="text-[12px] text-noir-gray">Pilih pesan untuk membaca detail</p>
             </div>
           )}
         </div>
       </div>
+
+      {/* Delete Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-noir-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-lg border border-noir-border w-full max-w-sm shadow-xl">
+            <div className="px-5 py-4 border-b border-noir-border"><h3 className="text-[13px] font-medium text-noir-black">Hapus Pesan</h3></div>
+            <div className="p-5"><p className="text-[12px] text-noir-gray">Hapus pesan dari &ldquo;{deleteTarget.name}&rdquo;?</p></div>
+            <div className="px-5 py-3.5 border-t border-noir-border flex justify-end gap-2">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 text-[10px] uppercase tracking-[1px] font-medium border border-noir-border rounded text-noir-gray hover:bg-noir-surface cursor-pointer">Batal</button>
+              <button onClick={handleDelete} className="px-4 py-2 text-[10px] uppercase tracking-[1px] font-medium bg-noir-red text-white rounded hover:bg-noir-red-dark cursor-pointer">Ya, Hapus</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
